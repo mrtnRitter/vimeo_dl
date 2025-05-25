@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import WebDriverException
 import time
 import re
 import math
@@ -25,7 +26,7 @@ last_page = None
 vids_fetched = None
 vids_txt_filename = "vids.txt"
 download_dir = r"C:\Users\Martin\Documents\GitHub\vimeo_dl\Downloads"
-debug = True
+debug = False
 
 
 # ------------- FUNCTIONS -------------
@@ -192,11 +193,30 @@ def get_dl_file():
         file_path = crdownload_path.replace(".crdownload", "")
 
         if os.path.exists(file_path) and not os.path.exists(crdownload_path):
-            return dl_name
+            dl_file = os.path.basename(file_path)
+            return dl_file
         
         time.sleep(1)
     
-    
+
+def login():
+    """
+    Login to the Vimeo account.
+    """
+    global driver
+    browser_open = True
+    setup_driver(headless=False, download=False)
+
+    driver.get("https://vimeo.com/login")
+
+    while browser_open:
+        try:
+            driver.title
+            browser_open = True
+        except WebDriverException:
+            browser_open = False
+            driver = None
+
 
 def fetch():
     """
@@ -204,7 +224,7 @@ def fetch():
     """
 
     global driver
-    setup_driver(headless=True, download=False)
+    setup_driver(headless=False, download=False)
 
     total_vids, last_page = get_total_vids_and_last_page()
 
@@ -242,30 +262,46 @@ def download():
         for line in f:
             all_vals = line.strip().split("\t")
             if len(all_vals) >= 5:
-                vid_folder, vid_name, dl_link_org = all_vals[-3:]
+                vids_fetched, _, vid_folder, vid_name, dl_link_org = all_vals[:5]
                 driver.get(dl_link_org)
                 
-                print(f"Downloading video: {vid_name}")
+                print(f"Downloading video: {vids_fetched} {vid_name}")
                 download_file = get_dl_file()
+                ext = os.path.splitext(download_file)[1]
 
                 src_path = os.path.join(download_dir, download_file)
                 dst_folder = os.path.join(download_dir, vid_folder)
-                dst_path = os.path.join(dst_folder, vid_name)
+                dst_path = os.path.join(dst_folder, vid_name + ext)
 
                 if not os.path.exists(dst_folder):
                     os.makedirs(dst_folder)
                 
                 shutil.move(src_path, dst_path)
                 
-                print(f"Download abgeschlossen: {vid_name}")
+                print("Download abgeschlossen!")
 
     driver.quit()
     driver = None
 
 
+def ask_operation(with_login=True):
+    """
+    Ask the user for the operation to perform.
+    """
+    if with_login:
+        operation = input("login (l), fetch video data (f), download videos (d), or all (a)? ").strip().lower()
+    else:
+        operation = input("fetch video data (f), download videos (d), or all (a)? ").strip().lower()
+    return operation
+
+
 # ------------- MAIN -------------
 
-operation = input("fetch video data (f), download videos (d), or both (b)? ").strip().lower()
+operation = ask_operation(with_login=True)
+
+if operation == "l":
+    login()
+    operation = ask_operation(with_login=False)
 
 if operation == "f":
     fetch()
@@ -273,35 +309,11 @@ if operation == "f":
 elif operation == "d":
     download()
 
-elif operation == "b":
+elif operation == "a":
+    login()
     fetch()
     download()
 
 else:
     print("Invalid operation. Please choose 'f', 'd', or 'b'.")
     exit(1)
-
-
-
-
-
-
-
-
-
-
-                
-                
-                
-                
-
-
-
-
-
-
-
-
-
-
-
