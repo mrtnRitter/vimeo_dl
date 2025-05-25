@@ -228,6 +228,7 @@ def fetch():
 
     total_vids, last_page = get_total_vids_and_last_page()
 
+    global vids_fetched
     vids_fetched = 0
 
     for page in range(1, last_page + 1):
