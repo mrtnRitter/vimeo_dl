@@ -108,7 +108,7 @@ def close_modal_dl_dialog():
 
 
 
-def fetch_vid_data(download=False, delete=False):
+def fetch_vid_data(delete=False):
     """
     Get all videos from the current page.
     """
@@ -135,7 +135,8 @@ def fetch_vid_data(download=False, delete=False):
                     if three_dot_container.is_displayed():
                         three_dot_options = three_dot_container.find_elements(By.TAG_NAME, "Button")
                         for three_dot_option in three_dot_options:
-                            # Download video
+                           
+                           # Download video
                             if three_dot_option.get_attribute("data-index") == "2":
                                 three_dot_option.click()
                                 time.sleep(1)
@@ -158,9 +159,11 @@ def fetch_vid_data(download=False, delete=False):
 
 
                             # Delete video
-                            # if three_dot_option.get_attribute("data-index") == "5":
-                            #     delete_vid = three_dot_option
-                            #     #delete_vid.click()
+                            if delete:
+                                pass
+                                # if three_dot_option.get_attribute("data-index") == "5":
+                                #     delete_vid = three_dot_option
+                                #     #delete_vid.click()
 
 
                 with open(vids_txt_filename, "a", encoding="utf-8") as f:
@@ -236,9 +239,9 @@ def fetch():
         driver.get(target_url)
         time.sleep(5)
 
-        if not fetch_vid_data():
+        if not fetch_vid_data(delete=False):
             driver.refresh()
-            if not fetch_vid_data():
+            if not fetch_vid_data(delete=False):
                 print(f"[FATAL] Unable to fetch video data on page {page}")
                 exit(1)
 
