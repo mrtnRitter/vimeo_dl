@@ -18,14 +18,14 @@ app_author = "https://github.com/mrtnRitter"
 
 driver = None
 base_url = "https://vimeo.com/search/library?page={page}&type=video&sort=date_desc"
-user_data_dir = r"C:\Users\Martin\AppData\Local\Temp"
+user_data_dir = r"C:\Users\Avid_Berlin_3\AppData\Local\Temp"
 profile_dir = "scoped_dir999_000"
-discover_timeout = 30
+discover_timeout = 30   
 total_vids = None
 last_page = None
 vids_fetched = None
 vids_txt_filename = "vids.txt"
-download_dir = r"C:\Users\Martin\Documents\GitHub\vimeo_dl\Downloads"
+download_dir = r"E:\tmp Martin\Download Vimeo\dl"
 debug = False
 
 
@@ -50,7 +50,7 @@ def setup_driver(headless, download):
     options.add_argument("--log-level=1")
     options.add_argument("--ignore-certificate-errors")
     options.add_argument("--ignore-ssl-errors")
-    options.add_argument("--window-size=1500,1650")
+    options.add_argument("--window-size=1500,1400")
     
     if user_data_dir and profile_dir and not download:
         options.add_argument(f"user-data-dir={user_data_dir}")
@@ -101,7 +101,6 @@ def close_modal_dl_dialog():
     if driver.execute_script(js_is_moddia):
         js_click_ok = "document.querySelector('button.chakra-button.css-1yk6z2g').click();"
         driver.execute_script(js_click_ok)
-        print("[INFO] Closed modal dialog.")
         return True
     
     return False
@@ -119,31 +118,27 @@ def fetch_vid_data(delete=False):
     
     try:
         list = driver.find_elements(By.CLASS_NAME, "css-ebczr7")
-
         for i, item in enumerate(list):
-            while True:
-                vid_name = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-qsz7k4").text
-                vid_date = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-806m9j").text
-                vid_folder = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-bvdmf7").text
-                
-                three_dot_menu = item.find_element(By.CSS_SELECTOR, ".chakra-stack.css-1fkbjl")
-                three_dot_menu.click()
-                time.sleep(1)
+            vid_name = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-qsz7k4").text
+            vid_date = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-806m9j").text
+            vid_folder = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-bvdmf7").text
+            
+            three_dot_menu = item.find_element(By.CSS_SELECTOR, ".chakra-stack.css-1fkbjl")
+            three_dot_menu.click()
+            time.sleep(1)
 
-                all_three_dot_containers = driver.find_elements(By.CLASS_NAME, "css-h9umap")
-                for three_dot_container in all_three_dot_containers:
-                    if three_dot_container.is_displayed():
-                        three_dot_options = three_dot_container.find_elements(By.TAG_NAME, "Button")
-                        for three_dot_option in three_dot_options:
-                           
-                           # Download video
-                            if three_dot_option.get_attribute("data-index") == "2":
-                                three_dot_option.click()
-                                time.sleep(1)
+            all_three_dot_containers = driver.find_elements(By.CLASS_NAME, "css-h9umap")
+            for three_dot_container in all_three_dot_containers:
+                if three_dot_container.is_displayed():
+                    three_dot_options = three_dot_container.find_elements(By.TAG_NAME, "Button")
+                    for three_dot_option in three_dot_options:
+                        
+                        # Download video
+                        if three_dot_option.get_attribute("data-index") == "2":
+                            three_dot_option.click()
+                            time.sleep(1)
 
-                                if close_modal_dl_dialog():
-                                    continue
-                                
+                            if not close_modal_dl_dialog():
                                 dl_opts = driver.find_elements(By.CLASS_NAME, "css-1lekzkb")
                                 for dl_opt in dl_opts:
                                     if dl_opt.find_element(By.CSS_SELECTOR, ".chakra-text.css-qo6t4t").text == "Original":
@@ -155,24 +150,26 @@ def fetch_vid_data(delete=False):
 
                                 # Scroll a bit down
                                 vid_container = driver.find_element(By.CLASS_NAME, "css-yt9y4i")
-                                driver.execute_script("arguments[0].scrollBy(0, 50);", vid_container)
+                                driver.execute_script("arguments[0].scrollBy(0, 75);", vid_container)
+                            
+                            else:
+                                dl_link_org = "Dead video"
 
 
-                            # Delete video
-                            if delete:
-                                pass
-                                # if three_dot_option.get_attribute("data-index") == "5":
-                                #     delete_vid = three_dot_option
-                                #     #delete_vid.click()
+                        # Delete video
+                        if delete:
+                            pass
+                            # if three_dot_option.get_attribute("data-index") == "5":
+                            #     delete_vid = three_dot_option
+                            #     #delete_vid.click()
 
-
-                with open(vids_txt_filename, "a", encoding="utf-8") as f:
-                    vids_fetched += 1
-                    line = f"{vids_fetched}\t{vid_date}\t{vid_folder}\t{vid_name}\t{dl_link_org}\n"
-                    f.write(line)
-                    print(vids_fetched, vid_name)
+            with open(vids_txt_filename, "a", encoding="utf-8") as f:
+                vids_fetched += 1
+                line = f"{vids_fetched}\t{vid_date}\t{vid_folder}\t{vid_name}\t{dl_link_org}\n"
+                f.write(line)
+                print(vids_fetched, vid_name)
                 
-                break
+
                 
         return True
 
@@ -183,23 +180,24 @@ def fetch_vid_data(delete=False):
 
 def get_dl_file():
     dl_name = None
-    time.sleep(5)
+    time.sleep(1)
 
-    while True:
-        if not dl_name:
-            for fname in os.listdir(download_dir):
-                if fname.endswith(".crdownload"):
-                    dl_name = fname
-                    break
+    while not dl_name:
+        dl_name = os.listdir(download_dir)
 
-        crdownload_path = os.path.join(download_dir, dl_name)
-        file_path = crdownload_path.replace(".crdownload", "")
+        for fname in os.listdir(download_dir):
+            if fname.endswith(".crdownload"):
+                dl_name = fname
+                break
 
-        if os.path.exists(file_path) and not os.path.exists(crdownload_path):
-            dl_file = os.path.basename(file_path)
-            return dl_file
-        
-        time.sleep(1)
+    crdownload_path = os.path.join(download_dir, dl_name)
+    file_path = crdownload_path.replace(".crdownload", "")
+
+    if os.path.exists(file_path) and not os.path.exists(crdownload_path):
+        dl_file = os.path.basename(file_path)
+        return dl_file
+    
+    time.sleep(1)
     
 
 def login():
@@ -230,11 +228,13 @@ def fetch():
     setup_driver(headless=False, download=False)
 
     total_vids, last_page = get_total_vids_and_last_page()
+    first_page = 1
+    last_page = 10
 
     global vids_fetched
-    vids_fetched = 0
+    vids_fetched = (first_page-1)*24
 
-    for page in range(1, last_page + 1):
+    for page in range(first_page, last_page + 1):
         target_url = base_url.format(page=page)
         driver.get(target_url)
         time.sleep(5)
@@ -252,7 +252,7 @@ def fetch():
         print(f"All {vids_fetched} videos done.")
     else:
         print(f"{vids_fetched} videos done, but expected {total_vids}. Something went wrong. Operation aborted.")
-        exit(1)
+        exit(0)
 
 
 
@@ -267,22 +267,25 @@ def download():
             all_vals = line.strip().split("\t")
             if len(all_vals) >= 5:
                 vids_fetched, _, vid_folder, vid_name, dl_link_org = all_vals[:5]
-                driver.get(dl_link_org)
+                if dl_link_org != "Dead video":
+                    driver.get(dl_link_org)
                 
-                print(f"Downloading video: {vids_fetched} {vid_name}")
-                download_file = get_dl_file()
-                ext = os.path.splitext(download_file)[1]
+                    print(f"Downloading video: {vids_fetched} {vid_name}")
+                    download_file = get_dl_file()
+                    ext = os.path.splitext(download_file)[1]
 
-                src_path = os.path.join(download_dir, download_file)
-                dst_folder = os.path.join(download_dir, vid_folder)
-                dst_path = os.path.join(dst_folder, vid_name + ext)
+                    src_path = os.path.join(download_dir, download_file)
+                    dst_folder = os.path.join(download_dir, vid_folder)
+                    dst_path = os.path.join(dst_folder, vid_name + ext)
 
-                if not os.path.exists(dst_folder):
-                    os.makedirs(dst_folder)
-                
-                shutil.move(src_path, dst_path)
-                
-                print("Download abgeschlossen!")
+                    if not os.path.exists(dst_folder):
+                        os.makedirs(dst_folder)
+                    
+                    shutil.move(src_path, dst_path)
+                    
+                    print("Download abgeschlossen!")
+                else:
+                    print("Dead video - no download")
 
     driver.quit()
     driver = None
