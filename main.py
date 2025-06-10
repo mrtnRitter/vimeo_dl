@@ -118,6 +118,7 @@ def fetch_vid_data(delete=False):
     
     try:
         list = driver.find_elements(By.CLASS_NAME, "css-ebczr7")
+
         for i, item in enumerate(list):
             vid_name = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-qsz7k4").text
             vid_date = item.find_element(By.CSS_SELECTOR, ".chakra-text.css-806m9j").text
@@ -182,22 +183,21 @@ def get_dl_file():
     dl_name = None
     time.sleep(1)
 
-    while not dl_name:
-        dl_name = os.listdir(download_dir)
+    while True:
+        if not dl_name:
+            for fname in os.listdir(download_dir):
+                if fname.endswith(".crdownload"):
+                    dl_name = fname
+                    break
 
-        for fname in os.listdir(download_dir):
-            if fname.endswith(".crdownload"):
-                dl_name = fname
-                break
+        crdownload_path = os.path.join(download_dir, dl_name)
+        file_path = crdownload_path.replace(".crdownload", "")
 
-    crdownload_path = os.path.join(download_dir, dl_name)
-    file_path = crdownload_path.replace(".crdownload", "")
-
-    if os.path.exists(file_path) and not os.path.exists(crdownload_path):
-        dl_file = os.path.basename(file_path)
-        return dl_file
-    
-    time.sleep(1)
+        if os.path.exists(file_path) and not os.path.exists(crdownload_path):
+            dl_file = os.path.basename(file_path)
+            return dl_file
+        
+        time.sleep(1)
     
 
 def login():
@@ -228,8 +228,8 @@ def fetch():
     setup_driver(headless=False, download=False)
 
     total_vids, last_page = get_total_vids_and_last_page()
-    first_page = 1
-    last_page = 10
+    first_page = 136
+    last_page = 136
 
     global vids_fetched
     vids_fetched = (first_page-1)*24
@@ -271,25 +271,35 @@ def download():
                     driver.get(dl_link_org)
                 
                     print(f"Downloading video: {vids_fetched} {vid_name}")
-                    download_file = get_dl_file()
-                    ext = os.path.splitext(download_file)[1]
-
-                    src_path = os.path.join(download_dir, download_file)
-                    dst_folder = os.path.join(download_dir, vid_folder)
-                    dst_path = os.path.join(dst_folder, vid_name + ext)
-
-                    if not os.path.exists(dst_folder):
-                        os.makedirs(dst_folder)
+                    time.sleep(10)
                     
-                    shutil.move(src_path, dst_path)
+                    # download_file = get_dl_file()
+                    # ext = os.path.splitext(download_file)[1]
+
+                    # src_path = os.path.join(download_dir, download_file)
+                    # dst_folder = os.path.join(download_dir, vid_folder)
+                    # dst_path = os.path.join(dst_folder, vid_name + ext)
+
+                    # if not os.path.exists(dst_folder):
+                    #     os.makedirs(dst_folder)
                     
-                    print("Download abgeschlossen!")
+                    # shutil.move(src_path, dst_path)
+                    
+                    # print("Download abgeschlossen!")
                 else:
                     print("Dead video - no download")
+    
+    while True:
+        if any(fname.endswith(".crdownload") for fname in os.listdir(download_dir)):
+            print("Still downloading...")
+            time.sleep(30)
+        else:
+            break
 
     driver.quit()
     driver = None
-
+    print("Done!")
+    exit(0)
 
 def ask_operation(with_login=True):
     """
